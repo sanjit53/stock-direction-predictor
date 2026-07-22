@@ -115,5 +115,33 @@ def update_historical_csv(tickers, csv_path):
  
     return past_data
 
+
+def get_features_and_target(df):
+    if "target" not in df.columns:
+        raise ValueError("df must contain a 'target' column before calling get_features_and_target")
+
+    drop_cols = ["date", "ticker", "open", "high", "low", "close", "adj_close", "target"]
+
+    target = df["target"]
+    features = df.drop(columns=[c for c in drop_cols if c in df.columns])
+
+    return features, target
+
+
+def get_train_test_split(features, target):
+
+    if len(features) != len(target):
+        raise ValueError("features and target must be the same length")
+
+    split_idx = int(len(features) * 0.8)
+
+    train_features = features.iloc[:split_idx]
+    train_target = target.iloc[:split_idx]
+    test_features = features.iloc[split_idx:]
+    test_target = target.iloc[split_idx:]
+
+    return train_features, train_target, test_features, test_target
+
+
                                                     
 
