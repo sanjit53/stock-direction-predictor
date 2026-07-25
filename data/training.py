@@ -13,7 +13,7 @@ from sklearn.metrics import (
 
 from functions import get_price_data, get_features_and_target, get_train_test_split
 
-
+# Loads stock data from a saved CSV or downloads it if no file is provided.
 def load_data(tickers, start, end, csv_path=None):
     """
     Load price data either from an existing CSV (fast, no network calls)
@@ -26,7 +26,7 @@ def load_data(tickers, start, end, csv_path=None):
         df = get_price_data(tickers, start=start, end=end)
     return df
 
-
+# Trains a logistic regression model after standardizing the features.
 def train_logistic_regression(X_train, y_train, X_test, y_test):
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train)
@@ -38,7 +38,7 @@ def train_logistic_regression(X_train, y_train, X_test, y_test):
     preds = model.predict(X_test_scaled)
     return model, preds
 
-
+# Trains a random forest classifier on the training data.
 def train_random_forest(X_train, y_train, X_test, y_test, random_state=42):
     model = RandomForestClassifier(
         n_estimators=300,
@@ -52,7 +52,7 @@ def train_random_forest(X_train, y_train, X_test, y_test, random_state=42):
     preds = model.predict(X_test)
     return model, preds
 
-
+# Prints evaluation metrics to compare model performance.
 def evaluate(name, y_test, preds):
     print(f"\n=== {name} ===")
     print(f"Accuracy:  {accuracy_score(y_test, preds):.4f}")
@@ -63,7 +63,7 @@ def evaluate(name, y_test, preds):
     print(confusion_matrix(y_test, preds))
     print(classification_report(y_test, preds, zero_division=0))
 
-
+# Runs the complete stock prediction pipeline from data loading to evaluation.
 def main():
     tickers = ["AAPL", "MSFT", "NVDA"]
     start = "2018-01-01"
@@ -83,6 +83,7 @@ def main():
     rf, rf_preds = train_random_forest(X_train, y_train, X_test, y_test)
     evaluate("Random Forest", y_test, rf_preds)
 
+    # Display which features contributed most to the random forest's decisions.
     importances = pd.Series(rf.feature_importances_, index=features.columns)
     print("\nRandom Forest feature importances:")
     print(importances.sort_values(ascending=False))

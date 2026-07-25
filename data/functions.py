@@ -115,7 +115,7 @@ def update_historical_csv(tickers, csv_path):
  
     return past_data
 
-
+# Creates engineered features and a binary target for next-day stock price prediction.
 def get_features_and_target(df):
     required_cols = {"date", "ticker", "adj_close", "volume"}
     missing = required_cols - set(df.columns)
@@ -124,10 +124,13 @@ def get_features_and_target(df):
 
     df = df.copy()
     df["date"] = pd.to_datetime(df["date"])
+   
+    # Sort data by ticker and date to preserve time order.
     df = df.sort_values(["ticker", "date"]).reset_index(drop=True)
 
     ticker_frames = []
 
+    # Calculate features independently for each stock to avoid mixing time series.
     for t in df["ticker"].unique():
         group = df[df["ticker"] == t].copy()
 
@@ -141,6 +144,7 @@ def get_features_and_target(df):
 
         group["volume_ma_10"] = group["volume"].rolling(window=10).mean()
 
+        # Target is 1 if tomorrow's closing price is higher than today's.
         next_close = group["adj_close"].shift(-1)
         group["target"] = (next_close > group["adj_close"]).astype(float)
         group.loc[next_close.isna(), "target"] = float("nan")
@@ -148,10 +152,12 @@ def get_features_and_target(df):
         ticker_frames.append(group)
 
     working = pd.concat(ticker_frames, ignore_index=True)
+    
+    # Remove rows missing rolling-window features or the final target value.
     working = working.dropna()
     working["target"] = working["target"].astype(int)
 
-
+    # Re-sort by date so the train/test split remains chronological across all stocks.
     working = working.sort_values("date").reset_index(drop=True)
 
     drop_cols = ["date", "ticker", "open", "high", "low", "close", "adj_close", "target"]
@@ -162,7 +168,7 @@ def get_features_and_target(df):
 
     return features, target, dates
 
-
+# Splits the dataset into chronological training and testing sets (80/20).
 def get_train_test_split(features, target, dates):
     if len(features) != len(target) or len(features) != len(dates):
         raise ValueError("features, target, and dates must all be the same length")
@@ -182,6 +188,7 @@ def get_train_test_split(features, target, dates):
     train_dates = dates[train_mask]
     test_dates = dates[test_mask]
 
+    # Verify that no future data leaks into the training set.
     assert train_dates.max() < test_dates.min(), (
         "Split is not chronological — test data overlaps with or precedes training data."
     )
