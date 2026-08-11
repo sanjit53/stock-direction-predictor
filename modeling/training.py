@@ -1,3 +1,6 @@
+import os
+import sys
+import joblib
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
@@ -11,7 +14,11 @@ from sklearn.metrics import (
     classification_report,
 )
 
-from functions import get_price_data, get_features_and_target, get_train_test_split
+
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", "data"))
+t
+from functions import get_price_data              # data/functions.py
+from modeling_functions import get_features_and_target, get_train_test_split  # modeling/modeling_functions.py
 
 
 def load_data(tickers, start, end, csv_path=None):
@@ -69,7 +76,10 @@ def main():
     start = "2018-01-01"
     end = "2026-01-01"
 
-    df = load_data(tickers, start, end, csv_path="market_data.csv")
+    df = load_data(
+        tickers, start, end,
+        csv_path=os.path.join("..", "data", "market_data.csv"),
+    )
 
     features, target, dates = get_features_and_target(df)
     X_train, y_train, X_test, y_test = get_train_test_split(features, target, dates)
@@ -86,6 +96,10 @@ def main():
     importances = pd.Series(rf.feature_importances_, index=features.columns)
     print("\nRandom Forest feature importances:")
     print(importances.sort_values(ascending=False))
+
+    model_path = os.path.join(os.path.dirname(__file__), "model.pkl")
+    joblib.dump(rf, model_path)
+    print(f"Model saved to {model_path}")
 
 
 if __name__ == "__main__":
